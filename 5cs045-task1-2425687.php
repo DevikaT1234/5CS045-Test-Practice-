@@ -3,21 +3,26 @@
 $host = "localhost";
 $username = "db2425687";
 $password = "ManUnited123#";
-$database = "db2425687"; 
+$database = "db2425687";
 
-$conn = new mysqli($host, $username, $password, $database);
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-// Check database connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+try {
+    $conn = new mysqli($host, $username, $password, $database);
+    $conn->set_charset("utf8mb4");
+
+    // Retrieve sports records
+    $sql = "SELECT sport_id, sport_name, Genre, Price, Date_of_release
+            FROM sports
+            ORDER BY sport_id";
+
+    $result = $conn->query($sql);
+
+} catch (mysqli_sql_exception $e) {
+    error_log($e->getMessage());
+    http_response_code(500);
+    exit("Unable to retrieve sport records. Please check the database configuration and server error log.");
 }
-
-// Retrieve book records
-$sql = "SELECT Book_id, Book_name, Genre, Price, Date_of_release
-        FROM Books
-        ORDER BY Book_id";
-
-$result = $conn->query($sql);
 ?>
 
 <!DOCTYPE html>
@@ -25,7 +30,7 @@ $result = $conn->query($sql);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book Collection</title>
+    <title>Sport Collection</title>
 
     <style>
         body {
@@ -63,13 +68,13 @@ $result = $conn->query($sql);
 
 <body>
 
-<h1>Book Collection</h1>
+<h1>Sport Collection</h1>
 
 <table>
     <thead>
         <tr>
-            <th>Book ID</th>
-            <th>Book Name</th>
+            <th>sport id</th>
+            <th>sport name</th>
             <th>Genre</th>
             <th>Price (£)</th>
             <th>Date of Release</th>
@@ -77,25 +82,25 @@ $result = $conn->query($sql);
     </thead>
 
     <tbody>
-        <?php
-        if ($result && $result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                echo "<tr>";
-                echo "<td>" . htmlspecialchars($row["Book_id"]) . "</td>";
-                echo "<td>" . htmlspecialchars($row["Book_name"]) . "</td>";
-                echo "<td>" . htmlspecialchars($row["Genre"]) . "</td>";
-                echo "<td>" . number_format((float)$row["Price"], 2) . "</td>";
-                echo "<td>" . htmlspecialchars($row["Date_of_release"]) . "</td>";
-                echo "</tr>";
-            }
-        } else {
-            echo "<tr><td colspan='5'>No books found.</td></tr>";
-        }
-
-        $conn->close();
-        ?>
+        <?php if ($result->num_rows > 0): ?>
+            <?php while ($row = $result->fetch_assoc()): ?>
+                <tr>
+                    <td><?= htmlspecialchars((string)$row["sport_id"], ENT_QUOTES, 'UTF-8') ?></td>
+                    <td><?= htmlspecialchars((string)$row["sport_name"], ENT_QUOTES, 'UTF-8') ?></td>
+                    <td><?= htmlspecialchars((string)$row["Genre"], ENT_QUOTES, 'UTF-8') ?></td>
+                    <td><?= number_format((float)$row["Price"], 2) ?></td>
+                    <td><?= htmlspecialchars((string)$row["Date_of_release"], ENT_QUOTES, 'UTF-8') ?></td>
+                </tr>
+            <?php endwhile; ?>
+        <?php else: ?>
+            <tr>
+                <td colspan="5">No sports found.</td>
+            </tr>
+        <?php endif; ?>
     </tbody>
 </table>
+
+<?php $conn->close(); ?>
 
 </body>
 </html>
